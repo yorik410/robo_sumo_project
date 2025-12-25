@@ -15,8 +15,8 @@
 #define LineSensorFR PA3  // Sensor 8
 #define LineSensorFL PB1  // Sensor 3
 
-#define MaxSpeed 92
-#define TURBO_SPEED MaxSpeed * 2
+#define MaxSpeed 100
+#define TURBO_SPEED MaxSpeed * 2.2
 
 #define COEFFICIENT_SPEED_R 1.0
 #define COEFFICIENT_SPEED_L 1.0
@@ -105,6 +105,7 @@ void findEnemy(){
   ignoreTime = 1000; // ms
   interruptIgnoring = false;
   turboMode = true;
+  SerialBT.println("found");
   stage = 1;
 }
 
@@ -122,17 +123,18 @@ void goToEnemy(){
     ignoreTime = 0; // we are starting checking for enemy
   }
   if (ignoreTime > 0 && interruptIgnoring){ // if ignoring can be interrupted by vision
-    if (checkEnemyVisibility()) turboMode = ignoreTime = 0; // if we see enemy we should start checking for enemy
+    if (checkEnemyVisibility()) ignoreTime = 0; // if we see enemy we should start checking for enemy
+    else turboMode = false;
   }
 }
 
 void goFromLine(){
   LineSensorsData data = getLineCrossing();
   if (data.right){
-    go_around(MaxSpeed, -MaxSpeed);
+    go_around(-MaxSpeed, -MaxSpeed * 1.5);
   }
   else if (data.left){
-    go_around(MaxSpeed, -MaxSpeed);
+    go_around(-MaxSpeed, -MaxSpeed * 1.5);
   }
   else {
     stage = 0;
@@ -156,7 +158,7 @@ LineSensorsData getLineCrossing()
 }
 
 bool checkEnemyVisibility(){
-  return (checkDistance() <= MAX_DISTANCE);
+  return (0 < checkDistance() <= MAX_DISTANCE);
 }
 
 //int checkDistance(){
