@@ -16,12 +16,17 @@
 #define LineSensorFL PB1  // Sensor 3
 
 #define MaxSpeed 92
+#define TURBO_SPEED MaxSpeed * 2
+
+#define COEFFICIENT_SPEED_R 1.0
+#define COEFFICIENT_SPEED_L 1.0
 
 #define EEPROM_SIZE 4
 
 HardwareSerial SerialBT(PB7, PB6);
 
 int stage = 0;
+bool turboMode = false;
 
 unsigned int prevDist = 0;
 
@@ -97,25 +102,27 @@ void findEnemy(){
   // if enemy has been found
   brake();
   startIgnoring = millis();
-  ignoreTime = 2000; // ms
+  ignoreTime = 1000; // ms
   interruptIgnoring = false;
+  turboMode = true;
   stage = 1;
 }
 
 void goToEnemy(){
   if (checkSomeLineCrossing()) {stage = 2; return;}
-  
-  go_forward(MaxSpeed); // normal behaviour
+
+  if (turboMode) go_forward(TURBO_SPEED); // turbo to enemy
+  else go_forward(MaxSpeed); // normal behaviour
   
   if (ignoreTime == 0){ // if we don't ignore anything
-    if (!checkEnemyVisibility) stage = 0;
+    if (!checkEnemyVisibility()) turboMode = stage = 0;
   }
   if (ignoreTime > 0 && millis() - ignoreTime >= startIgnoring){ // if ignoring ran out of time
-    if (!checkEnemyVisibility) stage = 0; // if we don't see enemy we should find it
+    if (!checkEnemyVisibility()) turboMode = stage = 0; // if we don't see enemy we should find it
     ignoreTime = 0; // we are starting checking for enemy
   }
   if (ignoreTime > 0 && interruptIgnoring){ // if ignoring can be interrupted by vision
-    if (checkEnemyVisibility) ignoreTime = 0; // if we see enemy we should start checking for enemy
+    if (checkEnemyVisibility()) turboMode = ignoreTime = 0; // if we see enemy we should start checking for enemy
   }
 }
 
@@ -203,8 +210,8 @@ void go_forward(int speed){
   digitalWrite(BwdPin_L,!(speed >= 0)); 
   digitalWrite(FwdPin_L,(speed >= 0));
   
-  analogWrite(Speed_R, speed>=0 ? speed : -speed);
-  analogWrite(Speed_L, speed>=0 ? speed : -speed);
+  analogWrite(Speed_R, speed>=0 ? speed * COEFFICIENT_SPEED_R : -speed * COEFFICIENT_SPEED_R);
+  analogWrite(Speed_L, speed>=0 ? speed * COEFFICIENT_SPEED_L : -speed * COEFFICIENT_SPEED_L);
 }
 
 void go_around(int speedR, int speedL){
@@ -213,7 +220,8 @@ void go_around(int speedR, int speedL){
   
   digitalWrite(BwdPin_L,!(speedL >= 0)); 
   digitalWrite(FwdPin_L,(speedL >= 0));
-
+  speedR *= COEFFICIENT_SPEED_R;
+  speedL *= COEFFICIENT_SPEED_L;
   analogWrite(Speed_R, speedR>=0 ? speedR : -speedR);
   analogWrite(Speed_L, speedL>=0 ? speedL : -speedL);
 }
