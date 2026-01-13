@@ -10,7 +10,7 @@
 
 #define PIN_TRIG PA11 // TRIG pin (Sensor 6)
 #define PIN_ECHO PB5 // ECHO pin (Sensor 7)
-#define MAX_DISTANCE 150 // (cm) Константа для определения максимального расстояния, которое мы будем считать корректным
+#define MAX_DISTANCE 100 // (cm) Константа для определения максимального расстояния, которое мы будем считать корректным
 
 #define LineSensorFR PA3  // Sensor 8
 #define LineSensorFL PB1  // Sensor 3
@@ -112,29 +112,30 @@ void findEnemy(){
 void goToEnemy(){
   if (checkSomeLineCrossing()) {stage = 2; return;}
 
+  turboMode = checkEnemyVisibility();
+  
   if (turboMode) go_forward(TURBO_SPEED); // turbo to enemy
   else go_forward(MaxSpeed); // normal behaviour
   
   if (ignoreTime == 0){ // if we don't ignore anything
-    if (!checkEnemyVisibility()) turboMode = stage = 0;
+    if (!checkEnemyVisibility()) stage = 0;
   }
   if (ignoreTime > 0 && millis() - ignoreTime >= startIgnoring){ // if ignoring ran out of time
-    if (!checkEnemyVisibility()) turboMode = stage = 0; // if we don't see enemy we should find it
-    ignoreTime = 0; // we are starting checking for enemy
+    if (!checkEnemyVisibility()) stage = 0; // if we don't see enemy we should find it
+    ignoreTime = 0; // reset ignoring
   }
   if (ignoreTime > 0 && interruptIgnoring){ // if ignoring can be interrupted by vision
-    if (checkEnemyVisibility()) ignoreTime = 0; // if we see enemy we should start checking for enemy
-    else turboMode = false;
+    if (checkEnemyVisibility()) ignoreTime = 0; // if we see enemy we should reset ignoring
   }
 }
 
 void goFromLine(){
   LineSensorsData data = getLineCrossing();
   if (data.right){
-    go_around(-MaxSpeed, -MaxSpeed * 1.5);
+    go_around(-MaxSpeed * 1.5, -MaxSpeed * 2.2);
   }
   else if (data.left){
-    go_around(-MaxSpeed, -MaxSpeed * 1.5);
+    go_around(-MaxSpeed * 1.5, -MaxSpeed * 2.2);
   }
   else {
     stage = 0;
@@ -158,7 +159,8 @@ LineSensorsData getLineCrossing()
 }
 
 bool checkEnemyVisibility(){
-  return (0 < checkDistance() <= MAX_DISTANCE);
+  unsigned int dist = checkDistance();
+  return ((0 < dist) && (dist <= MAX_DISTANCE));
 }
 
 //int checkDistance(){
@@ -184,7 +186,7 @@ int checkDistance(){
     delayMicroseconds(10);
     digitalWrite(PIN_TRIG, LOW);
     duration = pulseIn(PIN_ECHO, HIGH);
-    distance = duration * 0.034 / 2;  // centimeter
+    prevDist = distance = duration * 0.034 / 2;  // centimeter
     SerialBT.println(distance);
     return distance;
   }
