@@ -82,31 +82,32 @@ void loop() {
       goFromLine();
       break;
   }
-  delay(1);
+//  delay(1);
 }
 
 void findEnemy(){
   if (checkSomeLineCrossing()) {stage = 2; return;}
-  startTurning = millis();
-  while (!checkEnemyVisibility()){ // we are going around while enemy isn't being found
+  if (startTurning == 0) startTurning = millis();
+  if (!checkEnemyVisibility()){ // we are going around while enemy isn't being found
     if (millis() - turnTimeMax >= startTurning){ // if enemy hasn't been found
+      startTurning = 0;
       startIgnoring = millis();
       ignoreTime = 1000; // ms
       interruptIgnoring = true;
       stage = 1;
-      return;
     }
-    if (checkSomeLineCrossing()) {stage = 2; return;}
-    go_around(MaxSpeed, -MaxSpeed);
+    else go_around(MaxSpeed, -MaxSpeed);
   }
-  // if enemy has been found
-  brake();
-  startIgnoring = millis();
-  ignoreTime = 1000; // ms
-  interruptIgnoring = false;
-  turboMode = true;
-  SerialBT.println("found");
-  stage = 1;
+  else {  // if enemy has been found
+    startTurning = 0;
+    startIgnoring = millis();
+    ignoreTime = 1000; // ms
+    interruptIgnoring = false;
+    turboMode = true;
+    SerialBT.println("found");
+    stage = 1;
+    brake();
+  }
 }
 
 void goToEnemy(){
@@ -131,11 +132,18 @@ void goToEnemy(){
 
 void goFromLine(){
   LineSensorsData data = getLineCrossing();
-  if (data.right){
+  if (data.right && data.left){
+    go_around(-TURBO_SPEED, -TURBO_SPEED);
+  }
+  else if (data.right){
     go_around(-MaxSpeed * 1.5, -MaxSpeed * 2.2);
+//    go_around(-TURBO_SPEED, -TURBO_SPEED);
+//    go_around(0, TURBO_SPEED);
   }
   else if (data.left){
     go_around(-MaxSpeed * 1.5, -MaxSpeed * 2.2);
+//    go_around(-TURBO_SPEED, -TURBO_SPEED);
+//    Go_around(TURBO_SPEED, 0);
   }
   else {
     stage = 0;
@@ -185,7 +193,7 @@ int checkDistance(){
     digitalWrite(PIN_TRIG, HIGH);
     delayMicroseconds(10);
     digitalWrite(PIN_TRIG, LOW);
-    duration = pulseIn(PIN_ECHO, HIGH);
+    duration = pulseIn(PIN_ECHO, HIGH, 8000);
     prevDist = distance = duration * 0.034 / 2;  // centimeter
     SerialBT.println(distance);
     return distance;
