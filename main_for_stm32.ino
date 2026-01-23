@@ -32,6 +32,7 @@ int stage = 0;
 bool turboMode = false;
 
 unsigned int prevDist = 0;
+unsigned int prevLaserDist = 0;
 
 int ignoreTime = 0; // ms
 unsigned long startIgnoring = 0; // ms
@@ -40,6 +41,8 @@ const int turnTimeMax = 1000; // ms
 unsigned long startTurning = 0; // ms
 const int distCheckTimeMax = 50; // ms
 unsigned long lastDistCheck = 0; // ms
+const int laserDistCheckTimeMax = 25; // ms
+unsigned long laserLastDistCheck = 0; // ms
 
 int maxesBlack[2] = {0, 0};
 
@@ -75,7 +78,7 @@ void setup() {
    SerialBT.begin(115200);
    Wire.begin();
 
-   distLaserSensor.setTimeout(500);
+   distLaserSensor.setTimeout(50);
    distLaserSensor.setSignalRateLimit(0.1);
    distLaserSensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
    distLaserSensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
@@ -203,6 +206,7 @@ bool checkEnemyVisibility(){
 
 int checkDistance(){
   if (millis() - distCheckTimeMax >= lastDistCheck){
+    lastDistCheck = millis();
     unsigned int distance;
     long duration;
     digitalWrite(PIN_TRIG, LOW);
@@ -222,9 +226,16 @@ int checkDistance(){
 
 int checkDistanceLaser(){
   if (laserDistInit){
-    int dist = distLaserSensor.readRangeSingleMillimeters();
-    if (distLaserSensor.timeoutOccurred()) { SerialBT.println("TIMEOUT"); return 0;}
-    return dist;
+    if (millis() - laserDistCheckTimeMax >= laserLastDistCheck){
+      laserLastDistCheck = millis();
+      int dist = distLaserSensor.readRangeSingleMillimeters();
+      if (distLaserSensor.timeoutOccurred()) { SerialBT.println("TIMEOUT"); return 0;}
+      prevLaserDist = dist;
+      return dist;
+    }
+    else{
+      return prevLaserDist;
+    }
   }
   return 0;
 }
