@@ -25,8 +25,8 @@
 
 #define EEPROM_SIZE 4
 
-VL53L0X distLaserSensor;
-HardwareSerial SerialBT(PB4, PA2);
+VL53L0X distLaserSensor;  // i2c Sensor 1 (SDA), Sensor 2 (SCL)
+HardwareSerial SerialBT(PB4, PA2);  // D12, A7
 
 int stage = 0;
 bool turboMode = false;
@@ -177,7 +177,7 @@ LineSensorsData getLineCrossing()
 bool checkEnemyVisibility(){
   unsigned int dist = checkDistance();
   unsigned int dist1 = checkDistanceLaser();
-  return (((0 < dist) && (dist <= MAX_DISTANCE)) || ((0 < dist) && (dist <= MAX_DISTANCE * 10));
+  return (((0 < dist) && (dist <= MAX_DISTANCE)) || ((0 < dist1) && (dist1 <= MAX_DISTANCE * 10)));
 }
 
 //int checkDistance(){
@@ -213,7 +213,7 @@ int checkDistance(){
 }
 
 int checkDistanceLaser(){
-  fi (laserDistInit){
+  if (laserDistInit){
     int dist = distLaserSensor.readRangeSingleMillimeters();
     if (distLaserSensor.timeoutOccurred()) { SerialBT.println("TIMEOUT"); return 0;}
     return dist;
