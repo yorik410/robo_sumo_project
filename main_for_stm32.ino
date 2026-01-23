@@ -1,4 +1,6 @@
 #include "EEPROM.h"
+#include <Wire.h>
+#include <VL53L0X.h>
 
 #define FwdPin_L PA5
 #define BwdPin_L PA4
@@ -23,7 +25,8 @@
 
 #define EEPROM_SIZE 4
 
-HardwareSerial SerialBT(PB7, PB6);
+VL53L0X distLaserSensor;
+HardwareSerial SerialBT(PB4, PA2);
 
 int stage = 0;
 bool turboMode = false;
@@ -45,6 +48,8 @@ struct LineSensorsData
   bool right;
   bool left;
 };
+
+bool laserDistInit = true;
 
 void setup() {
   pinMode(LineSensorFR, INPUT);
@@ -68,6 +73,17 @@ void setup() {
     }
   }
    SerialBT.begin(115200);
+   Wire.begin();
+
+   distLaserSensor.setTimeout(500);
+   distLaserSensor.setSignalRateLimit(0.1);
+   distLaserSensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
+   distLaserSensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
+   if (!distLaserSensor.init())
+   {
+     SerialBT.println("Failed to detect and initialize distLaserSensor!");
+     laserDistInit = false;
+   }
 }
 
 void loop() {
@@ -160,7 +176,8 @@ LineSensorsData getLineCrossing()
 
 bool checkEnemyVisibility(){
   unsigned int dist = checkDistance();
-  return ((0 < dist) && (dist <= MAX_DISTANCE));
+  unsigned int dist1 = checkDistanceLaser();
+  return (((0 < dist) && (dist <= MAX_DISTANCE)) || ((0 < dist) && (dist <= MAX_DISTANCE * 10));
 }
 
 //int checkDistance(){
@@ -193,6 +210,15 @@ int checkDistance(){
   else {
     return prevDist;
   }
+}
+
+int checkDistanceLaser(){
+  fi (laserDistInit){
+    int dist = distLaserSensor.readRangeSingleMillimeters();
+    if (distLaserSensor.timeoutOccurred()) { SerialBT.println("TIMEOUT"); return 0;}
+    return dist;
+  }
+  return 0;
 }
 
 void brake(){
