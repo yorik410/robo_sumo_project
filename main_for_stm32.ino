@@ -162,7 +162,7 @@ void goFromLine(){
   else if (data.left){
     go_around(-MaxSpeed * 1.5, -MaxSpeed * 2.2);
 //    go_around(-TURBO_SPEED, -TURBO_SPEED);
-//    Go_around(TURBO_SPEED, 0);
+//    go_around(TURBO_SPEED, 0);
   }
   else {
     stage = 0;
