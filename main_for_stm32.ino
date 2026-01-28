@@ -20,7 +20,7 @@
 #define MaxSpeed 100
 #define TURBO_SPEED MaxSpeed * 2.2
 
-#define COEFFICIENT_SPEED_R 1.0
+#define COEFFICIENT_SPEED_R 1.25
 #define COEFFICIENT_SPEED_L 1.0
 
 #define EEPROM_SIZE 4
@@ -216,7 +216,7 @@ int checkDistance(){
     digitalWrite(PIN_TRIG, LOW);
     duration = pulseIn(PIN_ECHO, HIGH, 8000);
     prevDist = distance = duration * 0.034 / 2;  // centimeter
-    SerialBT.println(distance);
+    SerialBT.print("US: "); SerialBT.println(distance);
     return distance;
   }
   else {
@@ -231,6 +231,7 @@ int checkDistanceLaser(){
       int dist = distLaserSensor.readRangeSingleMillimeters();
       if (distLaserSensor.timeoutOccurred()) { SerialBT.println("TIMEOUT"); return 0;}
       prevLaserDist = dist;
+      SerialBT.print("Laser: "); SerialBT.println(dist);
       return dist;
     }
     else{
@@ -259,8 +260,8 @@ void go_forward(int speed){
   digitalWrite(BwdPin_L,!(speed >= 0)); 
   digitalWrite(FwdPin_L,(speed >= 0));
   
-  analogWrite(Speed_R, speed>=0 ? speed * COEFFICIENT_SPEED_R : -speed * COEFFICIENT_SPEED_R);
-  analogWrite(Speed_L, speed>=0 ? speed * COEFFICIENT_SPEED_L : -speed * COEFFICIENT_SPEED_L);
+  analogWrite(Speed_R, speed>=0 ? (int)constrain(speed * COEFFICIENT_SPEED_R, 0, 255) : (int)constrain(-speed * COEFFICIENT_SPEED_R, 0, 255));
+  analogWrite(Speed_L, speed>=0 ? (int)constrain(speed * COEFFICIENT_SPEED_L, 0, 255) : (int)constrain(-speed * COEFFICIENT_SPEED_L, 0, 255));
 }
 
 void go_around(int speedR, int speedL){
@@ -271,6 +272,8 @@ void go_around(int speedR, int speedL){
   digitalWrite(FwdPin_L,(speedL >= 0));
   speedR *= COEFFICIENT_SPEED_R;
   speedL *= COEFFICIENT_SPEED_L;
+  speedR = constrain(speedR, -255, 255);
+  speedL = constrain(speedL, -255, 255);
   analogWrite(Speed_R, speedR>=0 ? speedR : -speedR);
   analogWrite(Speed_L, speedL>=0 ? speedL : -speedL);
 }

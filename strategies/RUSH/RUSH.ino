@@ -14,7 +14,7 @@
 #define MaxSpeed 100
 #define TURBO_SPEED 255
 
-#define COEFFICIENT_SPEED_R 1.0
+#define COEFFICIENT_SPEED_R 1.25
 #define COEFFICIENT_SPEED_L 1.0
 
 #define EEPROM_SIZE 4
