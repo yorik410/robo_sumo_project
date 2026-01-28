@@ -147,8 +147,8 @@ void go_forward(int speed){
   digitalWrite(BwdPin_L,!(speed >= 0)); 
   digitalWrite(FwdPin_L,(speed >= 0));
   
-  analogWrite(Speed_R, speed>=0 ? speed * COEFFICIENT_SPEED_R : -speed * COEFFICIENT_SPEED_R);
-  analogWrite(Speed_L, speed>=0 ? speed * COEFFICIENT_SPEED_L : -speed * COEFFICIENT_SPEED_L);
+  analogWrite(Speed_R, speed>=0 ? (int)constrain(speed * COEFFICIENT_SPEED_R, 0, 255) : (int)constrain(-speed * COEFFICIENT_SPEED_R, 0, 255));
+  analogWrite(Speed_L, speed>=0 ? (int)constrain(speed * COEFFICIENT_SPEED_L, 0, 255) : (int)constrain(-speed * COEFFICIENT_SPEED_L, 0, 255));
 }
 
 void go_around(int speedR, int speedL){
@@ -159,6 +159,8 @@ void go_around(int speedR, int speedL){
   digitalWrite(FwdPin_L,(speedL >= 0));
   speedR *= COEFFICIENT_SPEED_R;
   speedL *= COEFFICIENT_SPEED_L;
+  speedR = constrain(speedR, -255, 255);
+  speedL = constrain(speedL, -255, 255);
   analogWrite(Speed_R, speedR>=0 ? speedR : -speedR);
   analogWrite(Speed_L, speedL>=0 ? speedL : -speedL);
 }
