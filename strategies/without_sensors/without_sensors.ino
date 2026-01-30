@@ -139,6 +139,10 @@ void brake(){
   digitalWrite(Speed_L,LOW);
 }
 
+void soft_brake(){
+  digitalWrite(Speed_R,LOW);
+  digitalWrite(Speed_L,LOW);
+}
 
 void go_forward(int speed){
   digitalWrite(BwdPin_R,!(speed >= 0));
